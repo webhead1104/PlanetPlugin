@@ -1,0 +1,4 @@
+name: PlanetPlugin
+version: '${version}'
+main: webhead1104.planetplugin.PlanetPlugin
+api-version: '1.20'

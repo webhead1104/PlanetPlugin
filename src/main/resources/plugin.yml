@@ -3,5 +3,5 @@ version: '1.0-SNAPSHOT'
 main: webhead1104.planetplugin.PlanetPlugin
 author: Webhead1104
 api-version: '1.20'
-
-depend: ['Multiverse-Core']
+commands:
+  planet:

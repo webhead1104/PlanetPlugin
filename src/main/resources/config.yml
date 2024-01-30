@@ -1,3 +1,9 @@
 WorldName: planet
-x: 250
-z: 250
+x: 0
+z: 0
+mysql:
+  host:
+  port:
+  username:
+  password:
+  database-name:

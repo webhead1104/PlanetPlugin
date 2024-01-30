@@ -1,64 +1,125 @@
 package webhead1104.planetplugin;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
+import org.bukkit.WorldCreator;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import webhead1104.planetplugin.commands.PlanetCommand;
 import webhead1104.planetplugin.listeners.DamageListener;
 import webhead1104.planetplugin.listeners.JoinListener;
+import webhead1104.planetplugin.managers.WorldManager;
 
 public final class PlanetPlugin extends JavaPlugin {
-  public Clipboard clipboard;
-  
-  public void onEnable() {
-    registerListeners();
-    File file = new File("plugins/PlanetPlugin/config.yml");
-    if (!file.exists())
-      saveResource("config.yml", false); 
-    try {
-      File schem = new File(getResource("planet.schem").toString());
-      ClipboardFormat format = ClipboardFormats.findByFile(schem);
-      try {
-        ClipboardReader reader = format.getReader(new FileInputStream(schem));
+    public Clipboard clipboard;
+    public Player joinPlayer;
+    private final String WorldName = this.getConfig().getString("WorldName");
+
+    public void onEnable() {
+
+        File file = new File("plugins/PlanetPlugin/config.yml");
+        if(!file.exists())
+            this.saveResource("config.yml", false);
+
+
+
+        registerCommands();
+        //mysql stuff
         try {
-          Clipboard clipboard = reader.read();
-          if (reader != null)
-            reader.close(); 
-        } catch (Throwable throwable) {
-          if (reader != null)
-            try {
-              reader.close();
-            } catch (Throwable throwable1) {
-              throwable.addSuppressed(throwable1);
-            }  
-          throw throwable;
-        } 
-      } catch (IOException e) {
-        Logger log = Bukkit.getLogger();
-        log.info("THERE WAS A ERROR LOADING THE SCHEM" + e);
-        Bukkit.getPluginManager().disablePlugin((Plugin)this);
-        throw new RuntimeException(e);
-      } 
-    } catch (NullPointerException error) {
-      getLogger().log(Level.SEVERE, "error" + error);
-    } 
-  }
-  
-  public void onDisable() {}
-  
-  private void registerListeners() {
-    getServer().getPluginManager().registerEvents((Listener)new DamageListener(this), (Plugin)this);
-    getServer().getPluginManager().registerEvents((Listener)new JoinListener(this), (Plugin)this);
-  }
-  
-  private void registerCommands() {}
-}
+            connect();
+        } catch (ClassNotFoundException e) {
+
+            e.printStackTrace();
+        } catch (SQLException e) {
+
+            e.printStackTrace();
+        }
+        try {
+            createTables();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        registerListeners();
+        try {
+            schem();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        setup();
+    }
+
+    public void onDisable() {
+    }
+
+    private void registerListeners() {
+        getServer().getPluginManager().registerEvents((Listener) new DamageListener(this), (Plugin) this);
+        getServer().getPluginManager().registerEvents((Listener) new JoinListener(this), (Plugin) this);
+    }
+
+    private void registerCommands() {
+        getCommand("planet").setExecutor(new PlanetCommand(this));
+    }
+
+    public Connection connection;
+    public String host;
+    public String database;
+    public String username;
+    public String password;
+    public int port;
+
+
+    public void connect() throws SQLException, ClassNotFoundException {
+        host = this.getConfig().getString("mysql.host");
+        port = this.getConfig().getInt("mysql.port");
+        username = this.getConfig().getString("mysql.username");
+        password = this.getConfig().getString("mysql.password");
+        database = this.getConfig().getString("mysql.database-name");
+
+        Class.forName("com.mysql.jdbc.Driver");
+        connection = DriverManager.getConnection("jdbc:mysql://" + this.host+ ":" + this.port + "/" + this.database, this.username, this.password);
+
+    }
+
+    private void schem() throws IOException {
+        File schem = new File(this.getDataFolder().getAbsolutePath() + "/planet.schem");
+
+        ClipboardFormat format = ClipboardFormats.findByFile(schem);
+
+        ClipboardReader reader = format.getReader(new FileInputStream(schem));
+
+        clipboard = reader.read();
+
+
+
+    }
+
+    public void createTables() throws SQLException {
+        Statement statement = connection.createStatement();
+        statement.executeUpdate("CREATE TABLE IF NOT EXISTS `PlayerDATA` (`PlayerUUID` INT(32), `PlayerNAME` VARCHAR(16), `X` INT(1), `Y` INT(1), `Z` INT(1))");
+
+            }
+
+            public void setup() {
+        if (Bukkit.getWorld(WorldName) == null){
+                WorldCreator wc = new WorldCreator(WorldName);
+                wc.generator(new WorldManager()); //The chunk generator from step 1
+                wc.createWorld();
+        }
+            }
+
+
+
+        }

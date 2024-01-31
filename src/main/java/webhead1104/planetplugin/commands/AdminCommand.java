@@ -28,7 +28,6 @@ import java.util.logging.Level;
 
 public class AdminCommand implements CommandExecutor, TabCompleter {
     private final PlanetPlugin plugin;
-    private Player player;
 
     public AdminCommand(PlanetPlugin plugin) {
         this.plugin = plugin;
@@ -36,7 +35,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        player = (Player) sender;
+        Player player = (Player) sender;
         Clipboard clipboard = this.plugin.clipboard;
         if (player.hasPermission("planetplugin.admin")) {
             if (args.length >= 1) {

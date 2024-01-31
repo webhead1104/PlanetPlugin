@@ -63,7 +63,7 @@ public final class PlanetPlugin extends JavaPlugin {
     private void registerCommands() {
         getCommand("planet").setExecutor(new PlanetCommand(this));
         getCommand("visit").setExecutor(new VisitCommand(this));
-        getCommand("planet-admin").setExecutor(new AdminCommand(this));
+        getCommand("pladmin").setExecutor(new AdminCommand(this));
     }
 
     public Connection connection;

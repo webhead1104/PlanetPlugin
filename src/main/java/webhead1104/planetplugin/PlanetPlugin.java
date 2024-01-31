@@ -7,12 +7,12 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.logging.Level;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
 import org.bukkit.Bukkit;
-import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
@@ -28,7 +28,7 @@ import webhead1104.planetplugin.managers.WorldManager;
 public final class PlanetPlugin extends JavaPlugin {
     public Clipboard clipboard;
     public Player joinPlayer;
-    private final String WorldName = this.getConfig().getString("WorldName");
+    private final String WorldName = this.getConfig().getString("world");
 
     public void onEnable() {
 
@@ -37,33 +37,22 @@ public final class PlanetPlugin extends JavaPlugin {
             this.saveResource("config.yml", false);
 
 
-
+        registerListeners();
+        setup();
         registerCommands();
         //mysql stuff
         try {
             connect();
-        } catch (ClassNotFoundException e) {
-
-            e.printStackTrace();
-        } catch (SQLException e) {
-
-            e.printStackTrace();
-        }
-        try {
             createTables();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        registerListeners();
-        try {
             schem();
-        } catch (IOException e) {
+
+        } catch (SQLException | ClassNotFoundException | IOException e) {
+            this.getLogger().log(Level.SEVERE, e.toString());
             throw new RuntimeException(e);
         }
-        setup();
     }
-
     public void onDisable() {
+        this.saveConfig();
     }
 
     private void registerListeners() {

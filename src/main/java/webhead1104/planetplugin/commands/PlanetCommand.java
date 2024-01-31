@@ -10,11 +10,10 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import webhead1104.planetplugin.PlanetPlugin;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.util.Objects;
 import java.util.logging.Level;
 
 public class PlanetCommand implements CommandExecutor {
@@ -29,53 +28,30 @@ public class PlanetCommand implements CommandExecutor {
         player = (Player) sender;
         if (sender instanceof Player) {
             if (args.length == 0) {
-
-                try {
-                    World world = Bukkit.getWorld(plugin.getConfig().getString("WorldName"));
-                    PreparedStatement planetGet;
-                    planetGet = plugin.connection.prepareStatement("SELECT * FROM PlayerDATA WHERE `PlayerUUID` = `"+player.getUniqueId().toString()+"`;");
-
-                    ResultSet res = planetGet.executeQuery();
-                    res.next();
-
-                    int x = res.getInt("X");
-                    int y = res.getInt("Y");
-                    int z = res.getInt("Z");
-
-                    Location planet = new Location(world, x, y, z);
-                    player.teleport(planet);
-
-                }catch (RuntimeException | SQLException e) {
-                    player.sendMessage(ChatColor.RED + "OOPS! Something went wrong, please contact an administrator");
-                    plugin.getLogger().log(Level.SEVERE, "ERROR " + e + "Please tell Webhead1104 about this");
-                }
+                islandGoto();
             }
             }
                 if (args.length >= 1) {
                     switch (args[0].toLowerCase()) {
-                        case "goto" -> {
-                            try {
-                                World world = Bukkit.getWorld(plugin.getConfig().getString("WorldName"));
-                                Statement statement = plugin.connection.createStatement();
-                                String thing = plugin.database;
-
-                                ResultSet res = statement.executeQuery("SELECT * FROM `" + thing + "` WHERE PlayerUUID = '" + player.getUniqueId() + "';");
-                                res.next();
-
-                                int x = res.getInt("X");
-                                int y = res.getInt("Y");
-                                int z = res.getInt("Z");
-
-                                Location planet = new Location(world, x, y, z);
-                                player.teleport(planet);
-
-                            }catch (RuntimeException | SQLException e) {
-                                player.sendMessage(ChatColor.RED + "OOPS! Something went wrong, please contact an administrator");
-                                plugin.getLogger().log(Level.SEVERE, "ERROR " + e + "Please tell Webhead1104 about this");
-                            }
-                    }
-                }
-            }
+                        case "goto" -> islandGoto();}}
         return true;
+    }
+
+    public void islandGoto() {
+        try {
+            World world = Bukkit.getWorld(Objects.requireNonNull(plugin.getConfig().getString("world")));
+            PreparedStatement planetGet = plugin.connection.prepareStatement("SELECT * FROM PlayerDATA WHERE PlayerUUID = ?");
+            planetGet.setString(1, player.getUniqueId().toString());
+            ResultSet res = planetGet.executeQuery();
+            res.next();
+            int x = res.getInt("X");
+            int y = res.getInt("Y");
+            int z = res.getInt("Z");
+            Location planet = new Location(world, x, y, z);
+            player.teleport(planet);
+        }catch (RuntimeException | SQLException e) {
+            player.sendMessage(ChatColor.RED + "OOPS! Something went wrong, please contact an administrator");
+            plugin.getLogger().log(Level.SEVERE, "ERROR " + e + "Please tell Webhead1104 about this");
+        }
     }
     }

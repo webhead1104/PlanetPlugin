@@ -2,8 +2,8 @@ WorldName: planet
 x: 0
 z: 0
 mysql:
-  host:
-  port:
-  username:
-  password:
-  database-name:
+  host: eu01-db.cus.mc-panel.net
+  port: 3306
+  username: db_846586
+  password: 42c54c2458
+  database-name: db_846586

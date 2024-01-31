@@ -10,6 +10,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import webhead1104.planetplugin.PlanetPlugin;
+
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -30,10 +32,10 @@ public class PlanetCommand implements CommandExecutor {
 
                 try {
                     World world = Bukkit.getWorld(plugin.getConfig().getString("WorldName"));
-                    Statement statement = plugin.connection.createStatement();
-                    String thing = plugin.database;
+                    PreparedStatement planetGet;
+                    planetGet = plugin.connection.prepareStatement("SELECT * FROM PlayerDATA WHERE `PlayerUUID` = `"+player.getUniqueId().toString()+"`;");
 
-                    ResultSet res = statement.executeQuery("SELECT * FROM " + thing + " WHERE PlayerUUID = '" + player.getUniqueId() + "';");
+                    ResultSet res = planetGet.executeQuery();
                     res.next();
 
                     int x = res.getInt("X");

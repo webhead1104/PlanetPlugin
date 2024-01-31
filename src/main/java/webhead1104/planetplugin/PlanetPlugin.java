@@ -18,7 +18,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import webhead1104.planetplugin.commands.AdminCommand;
 import webhead1104.planetplugin.commands.PlanetCommand;
+import webhead1104.planetplugin.commands.VisitCommand;
 import webhead1104.planetplugin.listeners.DamageListener;
 import webhead1104.planetplugin.listeners.JoinListener;
 import webhead1104.planetplugin.managers.WorldManager;
@@ -71,6 +73,8 @@ public final class PlanetPlugin extends JavaPlugin {
 
     private void registerCommands() {
         getCommand("planet").setExecutor(new PlanetCommand(this));
+        getCommand("visit").setExecutor(new VisitCommand(this));
+        getCommand("planet-admin").setExecutor(new AdminCommand(this));
     }
 
     public Connection connection;
@@ -103,14 +107,14 @@ public final class PlanetPlugin extends JavaPlugin {
         clipboard = reader.read();
 
 
-
     }
 
     public void createTables() throws SQLException {
         Statement statement = connection.createStatement();
-        statement.executeUpdate("CREATE TABLE IF NOT EXISTS `PlayerDATA` (`PlayerUUID` INT(32), `PlayerNAME` VARCHAR(16), `X` INT(1), `Y` INT(1), `Z` INT(1))");
+        statement.executeUpdate("CREATE TABLE IF NOT EXISTS `PlayerDATA` (`PlayerUUID` VARCHAR(255), `X` INT(1), `Y` INT(1), `Z` INT(1))");
 
-            }
+
+    }
 
             public void setup() {
         if (Bukkit.getWorld(WorldName) == null){
@@ -118,8 +122,5 @@ public final class PlanetPlugin extends JavaPlugin {
                 wc.generator(new WorldManager()); //The chunk generator from step 1
                 wc.createWorld();
         }
-            }
-
-
-
-        }
+    }
+}

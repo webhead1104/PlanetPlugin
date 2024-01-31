@@ -9,11 +9,11 @@ import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.util.logging.Level;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -27,19 +27,21 @@ import webhead1104.planetplugin.PlanetPlugin;
 public class JoinListener implements Listener {
   private final PlanetPlugin plugin;
   private Player player;
+  private String playerUUID;
 
   public JoinListener(PlanetPlugin plugin) {
     this.plugin = plugin;
   }
 
 
-
   @EventHandler
   private void onJoin(PlayerJoinEvent event) throws SQLException {
     player = event.getPlayer();
-    if (!event.getPlayer().hasPlayedBefore()) {
+    playerUUID = player.getUniqueId().toString();
+    this.plugin.joinPlayer = event.getPlayer();
+    if (!player.hasPlayedBefore()) {
 
-      this.plugin.joinPlayer = event.getPlayer();
+
       Clipboard clipboard = this.plugin.clipboard;
 
       int x = this.plugin.getConfig().getInt("x");
@@ -65,39 +67,38 @@ public class JoinListener implements Listener {
 
         } catch (WorldEditException e) { // If worldedit generated an exception it will go here
           player.sendMessage(ChatColor.RED + "OOPS! Something went wrong, please contact an administrator");
-          e.printStackTrace();
+          plugin.getLogger().log(Level.SEVERE, e.toString());
         }
       } catch (Exception e) {
+        player.sendMessage(ChatColor.RED + "OOPS! Something went wrong, please contact an administrator");
+        plugin.getLogger().log(Level.SEVERE, e.toString());
         throw new RuntimeException(e);
       }
 
 
       int xthing = x + 250;
       int zthing = z + 250;
-      this.plugin.getConfig().set("x", Integer.valueOf(xthing));
-      this.plugin.getConfig().set("z", Integer.valueOf(zthing));
+      this.plugin.getConfig().set("x", xthing);
+      this.plugin.getConfig().set("z", zthing);
       Location loc = new Location(world, x, y, z);
       player.sendMessage("OH NO IT WORKED");
       player.teleport(loc);
-      String playerName = player.getName();
-      Statement statement = plugin.connection.createStatement();
-      PreparedStatement preparedStatement = plugin.connection.prepareStatement("INSERT INTO player_data(player_name, player_uidd) VALUES('SpraX', 120)");
-      preparedStatement.execute();
 
-      try {
-        statement.executeUpdate("UPDATE INTO PlayerDATA(PlayerUUID) VALUES ('" + player.getUniqueId() + "')");
-        statement.executeUpdate("UPDATE INTO PlayerDATA(PlayerNAME) VALUES ('" + playerName + "')");
-        statement.executeUpdate("UPDATE INTO PlayerDATA(X) VALUES ('" + x + "')");
-        statement.executeUpdate("UPDATE INTO PlayerDATA(Y) VALUES ('" + y + "')");
-        statement.executeUpdate("UPDATE INTO PlayerDATA(Z) VALUES ('" + z + "')");
-      } catch (SQLException e) {
-        e.printStackTrace();
+      PreparedStatement thing
+              = plugin.connection.prepareStatement("INSERT INTO PlayerDATA (PlayerUUID, X, Y, Z VALUES ('?', '?', '?', '?');");
 
-      }
-    } else if (event.getPlayer().hasPlayedBefore()) {
+      thing.setString(1, playerUUID);
+      thing.setInt(2, x);
+      thing.setInt(3, y);
+      thing.setInt(4, z);
+      thing.executeUpdate();
+
+    } else if (player.hasPlayedBefore()) {
       World world = Bukkit.getWorld(plugin.getConfig().getString("WorldName"));
-      Statement statement = plugin.connection.createStatement();
-      ResultSet res = statement.executeQuery("SELECT * FROM PlayerDATA WHERE PlayerUUID = '1e27cf68-9d59-45ba-8190-e4b55fabaf57';");
+      PreparedStatement planetGet;
+      planetGet = plugin.connection.prepareStatement("SELECT * FROM PlayerDATA WHERE PlayerUUID = ?");
+      planetGet.setString(1, player.getUniqueId().toString());
+      ResultSet res = planetGet.executeQuery();
       res.next();
 
       int x = res.getInt("X");
@@ -106,13 +107,6 @@ public class JoinListener implements Listener {
 
       Location planet = new Location(world, x, y, z);
       player.teleport(planet);
-
-
     }
-
-
   }
 }
-
-
-

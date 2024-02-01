@@ -7,6 +7,7 @@ version = '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+    maven{ url = "https://jitpack.io"}
     maven { url = uri("https://repo.papermc.io/repository/maven-public/") }
     maven { url = "https://maven.enginehub.org/repo/"}
     maven {
@@ -20,11 +21,13 @@ repositories {
 }
 
 dependencies {
-    implementation(platform("com.intellectualsites.bom:bom-newest:1.40")) // Ref: https://github.com/IntellectualSites/bom
+    implementation("com.github.coderFlameyosFlow.WoodyMenus:core:2.0.6")
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Core")
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit")
     compileOnly "io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT"
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.2.18")
+    implementation(platform("com.intellectualsites.bom:bom-newest:1.40"))
+
 }
 
 def targetJavaVersion = 17

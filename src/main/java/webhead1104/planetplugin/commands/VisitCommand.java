@@ -45,8 +45,8 @@ public class VisitCommand implements CommandExecutor {
                 visitor.sendMessage(ChatColor.RED + "OOPS! Something went wrong, please contact an administrator");
                 plugin.getLogger().log(Level.SEVERE, "ERROR " + e + "Please tell Webhead1104 about this");
             }
-        }else if (planet == null) {
-            visitor.sendMessage(ChatColor.RED + "Please chose a real player");
+        }   else {
+            visitor.sendMessage(ChatColor.RED + "Please choose a real player");
         }
         return true;
     }

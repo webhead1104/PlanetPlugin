@@ -30,18 +30,20 @@ public class JoinListener implements Listener {
     public JoinListener(PlanetPlugin plugin) {
     this.plugin = plugin;
   }
+  private int x,y,z;
+    private String playerUUID;
 
 
   @EventHandler
   private void onJoin(PlayerJoinEvent event) throws SQLException {
       Player player = event.getPlayer();
-      String playerUUID = player.getUniqueId().toString();
+      playerUUID = player.getUniqueId().toString();
     this.plugin.joinPlayer = event.getPlayer();
     if (!player.hasPlayedBefore()) {
       Clipboard clipboard = this.plugin.clipboard;
-      int x = this.plugin.getConfig().getInt("x");
-      int z = this.plugin.getConfig().getInt("z");
-      int y = 130;
+      x = this.plugin.getConfig().getInt("x");
+      z = this.plugin.getConfig().getInt("z");
+      y = 130;
       org.bukkit.World world = Bukkit.getWorld(Objects.requireNonNull(plugin.getConfig().getString("world")));
       try { //Pasting Operation
 // We need to adapt our world into a format that worldedit accepts. This looks like this:
@@ -67,7 +69,7 @@ public class JoinListener implements Listener {
       this.plugin.getConfig().set("z", zthing);
       Location loc = new Location(world, x, y, z);
       player.teleport(loc);
-      PreparedStatement thing = plugin.connection.prepareStatement("INSERT INTO PlayerDATA (PlayerUUID, X, Y, Z VALUES ('?', '?', '?', '?');");
+      PreparedStatement thing = plugin.connection.prepareStatement("INSERT IGNORE INTO PlayerDATA (PlayerUUID, X, Y, Z VALUES ('?', '?', '?', '?');");
       thing.setString(1, playerUUID);
       thing.setInt(2, x);
       thing.setInt(3, y);

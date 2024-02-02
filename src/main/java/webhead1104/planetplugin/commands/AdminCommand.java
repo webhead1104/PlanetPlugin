@@ -20,8 +20,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import webhead1104.planetplugin.PlanetPlugin;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -69,7 +71,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                                 throw new RuntimeException(e);}
 
                             try {
-                                PreparedStatement thing = plugin.connection.prepareStatement("INSERT INTO PlayerDATA (PlayerUUID, X, Y, Z) VALUES (?, ?, ?, ?);");
+                                PreparedStatement thing = plugin.connection.prepareStatement("INSERT IGNORE INTO PlayerDATA (PlayerUUID, X, Y, Z) VALUES (?, ?, ?, ?);");
                                 thing.setString(1, target.getUniqueId().toString());
                                 thing.setInt(2, x);
                                 thing.setInt(3, y);
@@ -87,7 +89,12 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                     case "reconnect" -> {
                         try {
                             plugin.connect();
-                        } catch (SQLException | ClassNotFoundException e) {
+                            if (!plugin.connection.isValid(1)) {
+                                player.sendMessage("ERROR");
+                                throw new SQLException("Could not establish database connection.");
+                            }
+                            player.sendMessage(ChatColor.GREEN + "reconnected to database!");
+                        }catch (SQLException | ClassNotFoundException e) {
                             player.sendMessage("ERROR");
                             plugin.getLogger().log(Level.SEVERE, "ERROR " + e + "Please tell Webhead1104 about this");
                             throw new RuntimeException(e);
@@ -103,7 +110,20 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
     }
 
     @Override
-    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        return List.of("databaseadd", "reconnect");
+    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String s, @NotNull String[] args) {
+        List<String> returnme = new ArrayList<>();
+        if(sender.hasPermission("planetplugin.admin")) {
+            if(args.length == 1) {
+                returnme.addAll(List.of("databaseadd", "reconnect"));
+            } else if (args.length == 2) {
+                List<String> list = new ArrayList<String>();
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    list.add(p.getName());
+                    returnme.addAll(list);
+                }
+                return list;
+            }
+        }
+        return returnme;
     }
 }

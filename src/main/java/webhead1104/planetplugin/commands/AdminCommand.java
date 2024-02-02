@@ -69,8 +69,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                                 throw new RuntimeException(e);}
 
                             try {
-                                PreparedStatement thing
-                                        = plugin.connection.prepareStatement("INSERT INTO PlayerDATA (PlayerUUID, X, Y, Z) VALUES (?, ?, ?, ?);");
+                                PreparedStatement thing = plugin.connection.prepareStatement("INSERT INTO PlayerDATA (PlayerUUID, X, Y, Z) VALUES (?, ?, ?, ?);");
                                 thing.setString(1, target.getUniqueId().toString());
                                 thing.setInt(2, x);
                                 thing.setInt(3, y);
@@ -85,6 +84,15 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                         player.sendMessage(ChatColor.GREEN + "Player added to database");
                         return true;
                     }
+                    case "reconnect" -> {
+                        try {
+                            plugin.connect();
+                        } catch (SQLException | ClassNotFoundException e) {
+                            player.sendMessage("ERROR");
+                            plugin.getLogger().log(Level.SEVERE, "ERROR " + e + "Please tell Webhead1104 about this");
+                            throw new RuntimeException(e);
+                        }
+                    }
                 }
             }
 
@@ -96,6 +104,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        return List.of("databaseadd");
+        return List.of("databaseadd", "reconnect");
     }
 }

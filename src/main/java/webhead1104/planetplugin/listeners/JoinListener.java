@@ -67,8 +67,7 @@ public class JoinListener implements Listener {
       this.plugin.getConfig().set("z", zthing);
       Location loc = new Location(world, x, y, z);
       player.teleport(loc);
-      PreparedStatement thing
-              = plugin.connection.prepareStatement("INSERT INTO PlayerDATA (PlayerUUID, X, Y, Z VALUES ('?', '?', '?', '?');");
+      PreparedStatement thing = plugin.connection.prepareStatement("INSERT INTO PlayerDATA (PlayerUUID, X, Y, Z VALUES ('?', '?', '?', '?');");
       thing.setString(1, playerUUID);
       thing.setInt(2, x);
       thing.setInt(3, y);

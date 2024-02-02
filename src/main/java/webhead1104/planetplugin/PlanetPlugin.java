@@ -82,10 +82,14 @@ public final class PlanetPlugin extends JavaPlugin {
         database = this.getConfig().getString("mysql.database-name");
 
         Class.forName("com.mysql.jdbc.Driver");
-        connection = DriverManager.getConnection("jdbc:mysql://" + this.host+ ":" + this.port + "/" + this.database, this.username, this.password);
+        connection = DriverManager.getConnection("jdbc:mysql://" + this.host + ":" + this.port + "/" + this.database, this.username, this.password);
 
+        try (Connection conn = connection) {
+            if (!conn.isValid(1)) {
+                throw new SQLException("Could not establish database connection.");
+            }
+        }
     }
-
     private void schem() throws IOException {
         File schem = new File(this.getDataFolder().getAbsolutePath() + "/planet.schem");
 

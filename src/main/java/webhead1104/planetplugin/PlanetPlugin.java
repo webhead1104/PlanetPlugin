@@ -27,7 +27,6 @@ import webhead1104.planetplugin.managers.WorldManager;
 
 public final class PlanetPlugin extends JavaPlugin {
     public Clipboard clipboard;
-    public Player joinPlayer;
     private final String WorldName = this.getConfig().getString("world");
 
     public void onEnable() {
@@ -83,11 +82,23 @@ public final class PlanetPlugin extends JavaPlugin {
 
         Class.forName("com.mysql.jdbc.Driver");
         connection = DriverManager.getConnection("jdbc:mysql://" + this.host + ":" + this.port + "/" + this.database, this.username, this.password);
-
             if (!connection.isValid(1)) {
                 throw new SQLException("Could not establish database connection.");
 
             }
+    }
+
+    public void createTables() throws SQLException {
+        Statement statement = connection.createStatement();
+        statement.executeUpdate("CREATE TABLE IF NOT EXISTS `PlayerDATA` (`PlayerUUID` VARCHAR(255), `X` INT(1), `Y` INT(1), `Z` INT(1))");
+    }
+
+            public void setup() {
+        if (Bukkit.getWorld(WorldName) == null){
+                WorldCreator wc = new WorldCreator(WorldName);
+                wc.generator(new WorldManager()); //The chunk generator from step 1
+                wc.createWorld();
+        }
     }
     private void schem() throws IOException {
         File schem = new File(this.getDataFolder().getAbsolutePath() + "/planet.schem");
@@ -97,22 +108,5 @@ public final class PlanetPlugin extends JavaPlugin {
         ClipboardReader reader = format.getReader(new FileInputStream(schem));
 
         clipboard = reader.read();
-
-
-    }
-
-    public void createTables() throws SQLException {
-        Statement statement = connection.createStatement();
-        statement.executeUpdate("CREATE TABLE IF NOT EXISTS `PlayerDATA` (`PlayerUUID` VARCHAR(255), `X` INT(1), `Y` INT(1), `Z` INT(1))");
-
-
-    }
-
-            public void setup() {
-        if (Bukkit.getWorld(WorldName) == null){
-                WorldCreator wc = new WorldCreator(WorldName);
-                wc.generator(new WorldManager()); //The chunk generator from step 1
-                wc.createWorld();
-        }
     }
 }

@@ -27,68 +27,92 @@ import webhead1104.planetplugin.PlanetPlugin;
 public class JoinListener implements Listener {
   private final PlanetPlugin plugin;
 
-    public JoinListener(PlanetPlugin plugin) {
+  public JoinListener(PlanetPlugin plugin) {
     this.plugin = plugin;
   }
-  private int x,y,z;
-    private String playerUUID;
 
+  private String playerUUID;
+  private int x, y, z;
+  private Player joinPlayer;
 
   @EventHandler
-  private void onJoin(PlayerJoinEvent event) throws SQLException {
-      Player player = event.getPlayer();
-      playerUUID = player.getUniqueId().toString();
-    this.plugin.joinPlayer = event.getPlayer();
-    if (!player.hasPlayedBefore()) {
-      Clipboard clipboard = this.plugin.clipboard;
-      x = this.plugin.getConfig().getInt("x");
-      z = this.plugin.getConfig().getInt("z");
-      y = 130;
-      org.bukkit.World world = Bukkit.getWorld(Objects.requireNonNull(plugin.getConfig().getString("world")));
-      try { //Pasting Operation
-// We need to adapt our world into a format that worldedit accepts. This looks like this:
-// Ensure it is using com.sk89q... otherwise we'll just be adapting a world into the same world.
-        com.sk89q.worldedit.world.World adaptedWorld = BukkitAdapter.adapt(world);
-        EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(adaptedWorld, -1);
-// Saves our operation and builds the paste - ready to be completed.
-        Operation operation = new ClipboardHolder(clipboard).createPaste(editSession)
-                .to(BlockVector3.at(x, y, z)).ignoreAirBlocks(true).build();
-        try { // This simply completes our paste and then cleans up.
-          Operations.complete(operation);
-          editSession.flushSession();
-        } catch (WorldEditException e) { // If worldedit generated an exception it will go here
-          player.sendMessage(ChatColor.RED + "OOPS! Something went wrong, please contact an administrator");
+  public void onJoin(PlayerJoinEvent event) throws SQLException {
+      joinPlayer = event.getPlayer();
+      playerUUID = joinPlayer.getUniqueId().toString();
+
+      PreparedStatement testing = plugin.connection.prepareStatement("SELECT * FROM PlayerDATA WHERE PlayerUUID = ?");
+      testing.setString(1, joinPlayer.getUniqueId().toString());
+      ResultSet testingres = testing.executeQuery();
+      testingres.next();
+      if (testingres.next()) {
+          if (testingres.getString("PlayerUUID") == null) {
+              newPlayer();
+          } else if (testingres.getString("PlayerUUID").equalsIgnoreCase(playerUUID)) {
+              oldPlayer();
+          }
+      }else {
+          PreparedStatement lololol = plugin.connection.prepareStatement("INSERT IGNORE INTO PlayerDATA (PlayerUUID, X, Y, Z VALUES (?, ?, ?, ?);");
+          lololol.setString(1, playerUUID);
+          lololol.setInt(2, x);
+          lololol.setInt(3, y);
+          lololol.setInt(4, z);
+          lololol.executeUpdate();
+          joinPlayer.sendMessage("come on");
+      }
+  }
+
+  //new player
+    private void newPlayer () throws SQLException {
+        Clipboard clipboard = this.plugin.clipboard;
+        x = this.plugin.getConfig().getInt("x");
+        z = this.plugin.getConfig().getInt("z");
+        y = 130;
+        org.bukkit.World world = Bukkit.getWorld(Objects.requireNonNull(plugin.getConfig().getString("world")));
+        try {
+          com.sk89q.worldedit.world.World adaptedWorld = BukkitAdapter.adapt(world);
+          EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(adaptedWorld, -1);
+          Operation operation = new ClipboardHolder(clipboard).createPaste(editSession)
+                  .to(BlockVector3.at(x, y, z)).ignoreAirBlocks(true).build();
+          try {
+            Operations.complete(operation);
+            editSession.flushSession();
+          } catch (WorldEditException e) {
+            joinPlayer.sendMessage(ChatColor.RED + "OOPS! Something went wrong, please contact an administrator");
+            plugin.getLogger().log(Level.SEVERE, e.toString());
+          }
+        } catch (Exception e) {
+          joinPlayer.sendMessage(ChatColor.RED + "OOPS! Something went wrong, please contact an administrator");
           plugin.getLogger().log(Level.SEVERE, e.toString());
-        }} catch (Exception e) {
-        player.sendMessage(ChatColor.RED + "OOPS! Something went wrong, please contact an administrator");
-        plugin.getLogger().log(Level.SEVERE, e.toString());
-        throw new RuntimeException(e);}
-      int xthing = x + 250;
-      int zthing = z + 250;
-      this.plugin.getConfig().set("x", xthing);
-      this.plugin.getConfig().set("z", zthing);
-      Location loc = new Location(world, x, y, z);
-      player.teleport(loc);
-      PreparedStatement thing = plugin.connection.prepareStatement("INSERT IGNORE INTO PlayerDATA (PlayerUUID, X, Y, Z VALUES ('?', '?', '?', '?');");
-      thing.setString(1, playerUUID);
-      thing.setInt(2, x);
-      thing.setInt(3, y);
-      thing.setInt(4, z);
-      thing.executeUpdate();
-      Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "spawnpoint " + player.getName() + " "+ x + " "+ y + " " + z);
+          throw new RuntimeException(e);
+        }
+        int xthing = x + 250;
+        int zthing = z + 250;
+        this.plugin.getConfig().set("x", xthing);
+        this.plugin.getConfig().set("z", zthing);
+        Location loc = new Location(world, x, y, z);
+        joinPlayer.teleport(loc);
+        PreparedStatement thing = plugin.connection.prepareStatement("INSERT INTO PlayerDATA (PlayerUUID, X, Y, Z)VALUES (?, ?, ?);");
+        thing.setString(1, playerUUID);
+        thing.setInt(2, x);
+        thing.setInt(3, y);
+        thing.setInt(4, z);
+        thing.executeUpdate();
+        joinPlayer.sendMessage("NEW PLAYER");
+      }
 
-    }else if (player.hasPlayedBefore()) {
-      World world = Bukkit.getWorld(Objects.requireNonNull(plugin.getConfig().getString("world")));
-      PreparedStatement planetGet = plugin.connection.prepareStatement("SELECT * FROM PlayerDATA WHERE PlayerUUID = ?");
-      planetGet.setString(1, player.getUniqueId().toString());
-      ResultSet res = planetGet.executeQuery();
-      res.next();
-      int x = res.getInt("X");
-      int y = res.getInt("Y");
-      int z = res.getInt("Z");
+      //old player
+      private void oldPlayer() throws SQLException {
+        World world = Bukkit.getWorld(Objects.requireNonNull(plugin.getConfig().getString("world")));
+        PreparedStatement planetGet = plugin.connection.prepareStatement("SELECT * FROM PlayerDATA WHERE PlayerUUID = ?");
+        planetGet.setString(1, joinPlayer.getUniqueId().toString());
+        ResultSet res = planetGet.executeQuery();
+        res.next();
+        int x = res.getInt("X");
+        int y = res.getInt("Y");
+        int z = res.getInt("Z");
 
-      Location planet = new Location(world, x, y, z);
-      player.teleport(planet);
+        Location planet = new Location(world, x, y, z);
+        joinPlayer.teleport(planet);
+        joinPlayer.sendMessage("OLD PLAYER");
+      }
     }
-    }
-}

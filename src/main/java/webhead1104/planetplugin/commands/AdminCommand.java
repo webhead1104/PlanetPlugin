@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import webhead1104.planetplugin.PlanetPlugin;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -111,6 +112,20 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                         }
                         player.sendMessage(ChatColor.GREEN + "Tables remade!");
                     }
+                    case "isplayerin-database" ->{
+                        try {
+                            Player player1 = Bukkit.getPlayer(args[0].toLowerCase());
+                            PreparedStatement preparedStatement = plugin.connection.prepareStatement("SELECT * FROM PlayerDATA WHERE PlayerUUID = ?");
+                            preparedStatement.setString(1, player1.getUniqueId().toString());
+                            ResultSet resultSet = preparedStatement.executeQuery();
+                            resultSet.next();
+                            if (Objects.equals(resultSet.getString("PlayerUUID"), player1.getUniqueId().toString())) {
+                                player.sendMessage(ChatColor.GREEN + args[0] + "is in the database");
+                            }
+                        } catch (SQLException e) {
+                            player.sendMessage(ChatColor.RED + args[0] + "is not in the database");
+                        }
+                    }
                 }
             }
 
@@ -125,7 +140,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         List<String> returnme = new ArrayList<>();
         if(sender.hasPermission("planetplugin.admin")) {
             if(args.length == 1) {
-                returnme.addAll(List.of("databaseadd", "reconnect","make-tables"));
+                returnme.addAll(List.of("databaseadd", "reconnect","make-tables","isplayerin-database"));
             } else if (args.length == 2) {
                 List<String> list = new ArrayList<String>();
                 for (Player p : Bukkit.getOnlinePlayers()) {

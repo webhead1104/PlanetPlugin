@@ -72,7 +72,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                             Location loc = new Location(world, x, y, z);
                             target.teleport(loc);
                             try {
-                                PreparedStatement thing = plugin.connection.prepareStatement("INSERT IGNORE INTO PlayerDATA (PlayerUUID, X, Y, Z VALUES (?, ?, ?, ?);");
+                                PreparedStatement thing = plugin.connection.prepareStatement("INSERT IGNORE INTO PlayerDATA (PlayerUUID, X, Y, Z VALUES (?, ?, ?, ?));");
                                 thing.setString(1, target.getUniqueId().toString());
                                 thing.setInt(2, x);
                                 thing.setInt(3, y);

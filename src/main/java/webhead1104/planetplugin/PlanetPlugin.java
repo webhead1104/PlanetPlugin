@@ -33,7 +33,7 @@ public final class PlanetPlugin extends JavaPlugin {
 
         File file = new File("plugins/PlanetPlugin/config.yml");
         if(!file.exists())
-            this.saveResource("config.yml", false);
+            this.saveResource("config.yml", true);
 
 
         registerListeners();

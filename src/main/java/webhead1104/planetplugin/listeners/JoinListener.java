@@ -39,26 +39,24 @@ public class JoinListener implements Listener {
   public void onJoin(PlayerJoinEvent event) throws SQLException {
       joinPlayer = event.getPlayer();
       playerUUID = joinPlayer.getUniqueId().toString();
+      x = this.plugin.getConfig().getInt("x");
+      z = this.plugin.getConfig().getInt("z");
+      y = 130;
+      PreparedStatement preparedStatement = plugin.connection.prepareStatement("SELECT * FROM PlayerDATA WHERE PlayerUUID = ?");
+      preparedStatement.setString(1, joinPlayer.getUniqueId().toString());
+      ResultSet resultSet = preparedStatement.executeQuery();
+      resultSet.next();
 
-      PreparedStatement testing = plugin.connection.prepareStatement("SELECT * FROM PlayerDATA WHERE PlayerUUID = ?");
-      testing.setString(1, joinPlayer.getUniqueId().toString());
-      ResultSet testingres = testing.executeQuery();
-      testingres.next();
-      if (testingres.next()) {
-          if (testingres.getString("PlayerUUID") == null) {
-              newPlayer();
-          } else if (testingres.getString("PlayerUUID").equalsIgnoreCase(playerUUID)) {
+      try {
+          if (Objects.equals(resultSet.getString("PlayerUUID"), joinPlayer.getUniqueId().toString())) {
               oldPlayer();
           }
-      }else {
-          PreparedStatement lololol = plugin.connection.prepareStatement("INSERT IGNORE INTO PlayerDATA (PlayerUUID, X, Y, Z VALUES (?, ?, ?, ?);");
-          lololol.setString(1, playerUUID);
-          lololol.setInt(2, x);
-          lololol.setInt(3, y);
-          lololol.setInt(4, z);
-          lololol.executeUpdate();
-          joinPlayer.sendMessage("come on");
+      } catch (SQLException e) {
+              newPlayer();
       }
+
+
+
   }
 
   //new player
@@ -91,13 +89,12 @@ public class JoinListener implements Listener {
         this.plugin.getConfig().set("z", zthing);
         Location loc = new Location(world, x, y, z);
         joinPlayer.teleport(loc);
-        PreparedStatement thing = plugin.connection.prepareStatement("INSERT INTO PlayerDATA (PlayerUUID, X, Y, Z)VALUES (?, ?, ?);");
+        PreparedStatement thing = plugin.connection.prepareStatement("INSERT INTO PlayerDATA (PlayerUUID, X, Y, Z)VALUES (?, ?, ?, ?);");
         thing.setString(1, playerUUID);
         thing.setInt(2, x);
         thing.setInt(3, y);
         thing.setInt(4, z);
         thing.executeUpdate();
-        joinPlayer.sendMessage("NEW PLAYER");
       }
 
       //old player
@@ -113,6 +110,5 @@ public class JoinListener implements Listener {
 
         Location planet = new Location(world, x, y, z);
         joinPlayer.teleport(planet);
-        joinPlayer.sendMessage("OLD PLAYER");
       }
     }

@@ -14,6 +14,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
 import java.util.logging.Level;
+import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -33,22 +35,23 @@ public class JoinListener implements Listener {
 
   private String playerUUID;
   private int x, y, z;
-  private Player joinPlayer;
+  public Player thing;
 
   @EventHandler
-  public void onJoin(PlayerJoinEvent event) throws SQLException {
-      joinPlayer = event.getPlayer();
-      playerUUID = joinPlayer.getUniqueId().toString();
+  public void onJoin(PlayerJoinEvent event) throws SQLException, ClassNotFoundException {
+      thing = event.getPlayer();
+      playerUUID = thing.getUniqueId().toString();
       x = this.plugin.getConfig().getInt("x");
       z = this.plugin.getConfig().getInt("z");
       y = 130;
-      PreparedStatement preparedStatement = plugin.connection.prepareStatement("SELECT * FROM PlayerDATA WHERE PlayerUUID = ?");
-      preparedStatement.setString(1, joinPlayer.getUniqueId().toString());
+      plugin.connect();
+      PreparedStatement preparedStatement = plugin.connection.prepareStatement("SELECT * FROM PlanetPlugin WHERE PlayerUUID = ?");
+      preparedStatement.setString(1, thing.getUniqueId().toString());
       ResultSet resultSet = preparedStatement.executeQuery();
       resultSet.next();
 
       try {
-          if (Objects.equals(resultSet.getString("PlayerUUID"), joinPlayer.getUniqueId().toString())) {
+          if (Objects.equals(resultSet.getString("PlayerUUID"), thing.getUniqueId().toString())) {
               oldPlayer();
           }
       } catch (SQLException e) {
@@ -60,12 +63,12 @@ public class JoinListener implements Listener {
   }
 
   //new player
-    private void newPlayer () throws SQLException {
+    private void newPlayer () throws SQLException, ClassNotFoundException {
         Clipboard clipboard = this.plugin.clipboard;
         x = this.plugin.getConfig().getInt("x");
         z = this.plugin.getConfig().getInt("z");
         y = 130;
-        org.bukkit.World world = Bukkit.getWorld(Objects.requireNonNull(plugin.getConfig().getString("world")));
+        org.bukkit.World world = Bukkit.getWorld("planet");
         try {
           com.sk89q.worldedit.world.World adaptedWorld = BukkitAdapter.adapt(world);
           EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(adaptedWorld, -1);
@@ -75,11 +78,11 @@ public class JoinListener implements Listener {
             Operations.complete(operation);
             editSession.flushSession();
           } catch (WorldEditException e) {
-            joinPlayer.sendMessage(ChatColor.RED + "OOPS! Something went wrong, please contact an administrator");
+            thing.sendMessage(ChatColor.RED + "OOPS! Something went wrong, please contact an administrator");
             plugin.getLogger().log(Level.SEVERE, e.toString());
           }
         } catch (Exception e) {
-          joinPlayer.sendMessage(ChatColor.RED + "OOPS! Something went wrong, please contact an administrator");
+          thing.sendMessage(ChatColor.RED + "OOPS! Something went wrong, please contact an administrator");
           plugin.getLogger().log(Level.SEVERE, e.toString());
           throw new RuntimeException(e);
         }
@@ -88,20 +91,24 @@ public class JoinListener implements Listener {
         this.plugin.getConfig().set("x", xthing);
         this.plugin.getConfig().set("z", zthing);
         Location loc = new Location(world, x, y, z);
-        joinPlayer.teleport(loc);
-        PreparedStatement thing = plugin.connection.prepareStatement("INSERT INTO PlayerDATA (PlayerUUID, X, Y, Z)VALUES (?, ?, ?, ?);");
+        thing.teleport(loc);
+        plugin.connect();
+        PreparedStatement thing = plugin.connection.prepareStatement("INSERT INTO PlanetPlugin (PlayerUUID, X, Y, Z, PlayerALIEN)VALUES (?, ?, ?, ?, ?);");
         thing.setString(1, playerUUID);
         thing.setInt(2, x);
         thing.setInt(3, y);
         thing.setInt(4, z);
+        thing.setString(5, "false");
         thing.executeUpdate();
+        worldborder();
       }
 
       //old player
-      private void oldPlayer() throws SQLException {
-        World world = Bukkit.getWorld(Objects.requireNonNull(plugin.getConfig().getString("world")));
-        PreparedStatement planetGet = plugin.connection.prepareStatement("SELECT * FROM PlayerDATA WHERE PlayerUUID = ?");
-        planetGet.setString(1, joinPlayer.getUniqueId().toString());
+      private void oldPlayer() throws SQLException, ClassNotFoundException {
+        World world = Bukkit.getWorld("planet");
+        plugin.connect();
+        PreparedStatement planetGet = plugin.connection.prepareStatement("SELECT * FROM PlanetPlugin WHERE PlayerUUID = ?");
+        planetGet.setString(1, thing.getUniqueId().toString());
         ResultSet res = planetGet.executeQuery();
         res.next();
         int x = res.getInt("X");
@@ -109,6 +116,32 @@ public class JoinListener implements Listener {
         int z = res.getInt("Z");
 
         Location planet = new Location(world, x, y, z);
-        joinPlayer.teleport(planet);
+        thing.teleport(planet);
       }
+
+      public void worldborder() throws SQLException, ClassNotFoundException {
+      plugin.connect();
+          PreparedStatement planetGet = plugin.connection.prepareStatement("SELECT * FROM PlanetPlugin WHERE PlayerUUID = ?");
+          planetGet.setString(1, thing.getUniqueId().toString());
+          ResultSet res = planetGet.executeQuery();
+          res.next();
+          int thingx = res.getInt("X");
+          int thingy = res.getInt("Y");
+          int thingz = res.getInt("Z");
+
+          int worldx = thingx + 250;
+          int worldy = thingy + 1000;
+          int worldz = thingz + 250;
+
+          int _worldx = thingx - 250;
+          int _worldy = thingy - 1000;
+          int _worldz = thingz - 250;
+
+          BlockVector3 plus = BlockVector3.at(worldx,worldy,worldz);
+          BlockVector3 minus = BlockVector3.at(_worldx,_worldy,_worldz);
+          ProtectedRegion region = new ProtectedCuboidRegion(playerUUID, plus, minus);
+          Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "rg flag " +playerUUID+ " -w planet exit deny");
+          Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "rg flag " +playerUUID+ " -w planet entry deny");
+
+  }
     }

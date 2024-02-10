@@ -9,9 +9,7 @@ import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
+import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -20,16 +18,19 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import webhead1104.planetplugin.PlanetPlugin;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 import java.util.logging.Level;
 
 public class AdminCommand implements CommandExecutor, TabCompleter {
     private final PlanetPlugin plugin;
+
 
     public AdminCommand(PlanetPlugin plugin) {
         this.plugin = plugin;
@@ -48,7 +49,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                             int x = this.plugin.getConfig().getInt("x");
                             int z = this.plugin.getConfig().getInt("z");
                             int y = 130;
-                            org.bukkit.World world = Bukkit.getWorld(Objects.requireNonNull(plugin.getConfig().getString("world")));
+                            World world = Bukkit.getWorld("planet");
                             try {
                                 com.sk89q.worldedit.world.World adaptedWorld = BukkitAdapter.adapt(world);
                                 EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(adaptedWorld, -1);
@@ -73,13 +74,14 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                             Location loc = new Location(world, x, y, z);
                             target.teleport(loc);
                             try {
-                                PreparedStatement thing = plugin.connection.prepareStatement("INSERT IGNORE INTO PlayerDATA (PlayerUUID, X, Y, Z VALUES (?, ?, ?, ?));");
+                                plugin.connect();
+                                PreparedStatement thing = plugin.connection.prepareStatement("INSERT IGNORE INTO PlanetPlugin (PlayerUUID, X, Y, Z VALUES (?, ?, ?, ?));");
                                 thing.setString(1, target.getUniqueId().toString());
                                 thing.setInt(2, x);
                                 thing.setInt(3, y);
                                 thing.setInt(4, z);
                                 thing.executeUpdate();
-                            } catch (SQLException e) {
+                            } catch (SQLException | ClassNotFoundException e) {
                                 throw new RuntimeException(e);
                             }
                         } else if (target == null) {
@@ -102,20 +104,24 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                             throw new RuntimeException(e);
                         }
                     }
-                    case "make-tables" -> {
+                    case "make-table" -> {
                         try {
+                            plugin.connect();
                             plugin.createTables();
                         } catch (SQLException e) {
                             player.sendMessage("ERROR");
                             plugin.getLogger().log(Level.SEVERE, "ERROR " + e + " Please tell Webhead1104 about this");
+                            throw new RuntimeException(e);
+                        } catch (ClassNotFoundException e) {
                             throw new RuntimeException(e);
                         }
                         player.sendMessage(ChatColor.GREEN + "Tables remade!");
                     }
                     case "isplayerin-database" ->{
                         try {
+                            plugin.connect();
                             Player player1 = Bukkit.getPlayer(args[0].toLowerCase());
-                            PreparedStatement preparedStatement = plugin.connection.prepareStatement("SELECT * FROM PlayerDATA WHERE PlayerUUID = ?");
+                            PreparedStatement preparedStatement = plugin.connection.prepareStatement("SELECT * FROM PlanetPlugin WHERE PlayerUUID = ?");
                             preparedStatement.setString(1, player1.getUniqueId().toString());
                             ResultSet resultSet = preparedStatement.executeQuery();
                             resultSet.next();
@@ -124,7 +130,19 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                             }
                         } catch (SQLException e) {
                             player.sendMessage(ChatColor.RED + args[0] + "is not in the database");
+                        } catch (ClassNotFoundException e) {
+                            throw new RuntimeException(e);
                         }
+                    }
+                    case "alien-raid" -> {
+                        try {
+                            plugin.alienSpawn();
+                        } catch (SQLException | ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    case "redo-table" -> {
+
                     }
                 }
             }
@@ -140,7 +158,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         List<String> returnme = new ArrayList<>();
         if(sender.hasPermission("planetplugin.admin")) {
             if(args.length == 1) {
-                returnme.addAll(List.of("databaseadd", "reconnect","make-tables","isplayerin-database"));
+                returnme.addAll(List.of("databaseadd", "reconnect","make-table","isplayerin-database", "alien-raid","redo-table"));
             } else if (args.length == 2) {
                 List<String> list = new ArrayList<String>();
                 for (Player p : Bukkit.getOnlinePlayers()) {

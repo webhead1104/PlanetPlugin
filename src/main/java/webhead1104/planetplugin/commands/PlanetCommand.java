@@ -1,9 +1,6 @@
 package webhead1104.planetplugin.commands;
 
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -39,8 +36,10 @@ public class PlanetCommand implements CommandExecutor {
 
     public void islandGoto() {
         try {
-            World world = Bukkit.getWorld(Objects.requireNonNull(plugin.getConfig().getString("world")));
-            PreparedStatement planetGet = plugin.connection.prepareStatement("SELECT * FROM PlayerDATA WHERE PlayerUUID = ?");
+
+            World world = Bukkit.getWorld("planet");
+            plugin.connect();
+            PreparedStatement planetGet = plugin.connection.prepareStatement("SELECT * FROM PlanetPlugin WHERE PlayerUUID = ?");
             planetGet.setString(1, player.getUniqueId().toString());
             ResultSet res = planetGet.executeQuery();
             res.next();
@@ -49,9 +48,12 @@ public class PlanetCommand implements CommandExecutor {
             int z = res.getInt("Z");
             Location planet = new Location(world, x, y, z);
             player.teleport(planet);
+            player.setGameMode(GameMode.SURVIVAL);
         }catch (RuntimeException | SQLException e) {
             player.sendMessage(ChatColor.RED + "OOPS! Something went wrong, please contact an administrator");
             plugin.getLogger().log(Level.SEVERE, "ERROR " + e + "Please tell Webhead1104 about this");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
     }

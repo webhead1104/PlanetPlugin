@@ -1,5 +1,8 @@
 package webhead1104.planetplugin.managers;
 
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import org.bukkit.World;
 import org.bukkit.generator.ChunkGenerator;
 import javax.annotation.Nonnull;

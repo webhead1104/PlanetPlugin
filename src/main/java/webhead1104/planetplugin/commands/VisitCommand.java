@@ -22,33 +22,36 @@ public class VisitCommand implements CommandExecutor {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         Player visitor = (Player) sender;
-        Player planet = Bukkit.getPlayer(args[0].toLowerCase());
-        if (planet != null) {
-            try {
-                plugin.connect();
-                World world = Bukkit.getWorld("planet");
-                PreparedStatement planetGet = plugin.connection.prepareStatement("SELECT * FROM PlanetPlugin WHERE PlayerUUID = ?;");
-                planetGet.setString(1, planet.getUniqueId().toString());
-                ResultSet res = planetGet.executeQuery();
-                res.next();
+        if (!(args.length == 0)) {
+            Player planet = Bukkit.getPlayer(args[0].toLowerCase());
+            if (planet != null) {
+                try {
+                    plugin.connect();
+                    World world = Bukkit.getWorld("planet");
+                    PreparedStatement planetGet = plugin.connection.prepareStatement("SELECT * FROM PlanetPlugin WHERE PlayerUUID = ?;");
+                    planetGet.setString(1, planet.getUniqueId().toString());
+                    ResultSet res = planetGet.executeQuery();
+                    res.next();
 
-                int x = res.getInt("X");
-                int y = res.getInt("Y");
-                int z = res.getInt("Z");
+                    int x = res.getInt("X");
+                    int y = res.getInt("Y");
+                    int z = res.getInt("Z");
 
-                Location loc = new Location(world, x, y, z);
-                visitor.teleport(loc);
-                visitor.setGameMode(GameMode.ADVENTURE);
+                    Location loc = new Location(world, x, y, z);
+                    visitor.teleport(loc);
+                    visitor.setGameMode(GameMode.ADVENTURE);
 
-            } catch (RuntimeException | SQLException e) {
-                visitor.sendMessage(ChatColor.RED + "OOPS! Something went wrong, please contact an administrator");
-                plugin.getLogger().log(Level.SEVERE, "ERROR " + e + "Please tell Webhead1104 about this");
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
+                } catch (RuntimeException | SQLException e) {
+                    visitor.sendMessage(ChatColor.RED + "OOPS! Something went wrong, please contact an administrator");
+                    plugin.getLogger().log(Level.SEVERE, "ERROR " + e + "Please tell Webhead1104 about this");
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+            } else {
+                visitor.sendMessage(ChatColor.RED + "Please choose a real player");
             }
-        }   else {
-            visitor.sendMessage(ChatColor.RED + "Please choose a real player");
         }
-        return true;
-    }
+            return true;
+        }
+
 }
